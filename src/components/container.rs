@@ -2,16 +2,17 @@ use std::collections::{HashMap, HashSet};
 use std::io::StdoutLock;
 use std::io::Write;
 
+use crate::colorscheme::ColorScheme;
+use crate::components::property::{Properties, Property};
 use crate::console::winsize::winsize;
-use crate::layout::Layout;
 use crate::render_pipeline;
+use crate::space::layout::Layout;
 use crate::space::{
-    area_conflicts, between, border::Border, border_fit, padding::Padding, Area, Pos,
+    area_conflicts, between, border::Border, border_fit, overlay, padding::Padding, Area, Pos,
 };
-use crate::themes::Style;
 
-use super::Property;
-use super::{ComponentTreeError, SpaceError};
+use super::Style;
+use super::{SpaceError, TreeError};
 use super::{Term, Text};
 
 /// Container objects are direct children of the Term object
@@ -21,29 +22,31 @@ pub struct Container {
     /// the layer of this container in terminal
     /// decide which container takes render priority in case of conflict
     /// think of it like css z-index
-    pub layer: u8,
+    // should be a property
+    // pub layer: u8,
     /// unique id
     pub id: [u8; 2],
     /// children Text objects
-    pub items: Vec<Text>,
+    pub texts: HashMap<[u8; 3], Text>,
     /// width
     pub w: u16,
     /// height
     pub h: u16,
     /// origin point x coordinate
-    pub x0: u16,
+    pub hpos: u16,
     /// origin point y coordinate
-    pub y0: u16,
+    pub vpos: u16,
     /// border value
     pub border: Border,
     /// padding value
     pub padding: Padding,
-    // the following field has now become part of properties
-    /// border style
-    pub bstyle: String,
+    // colorscheme
+    pub colorscheme: ColorScheme,
+    /// layout
     pub layout: Layout,
-    pub properties: HashMap<&'static str, Property>,
+    pub properties: Properties,
     pub attributes: HashSet<&'static str>,
+    pub built_on: std::time::Instant,
 }
 
 impl std::fmt::Display for Container {
@@ -57,8 +60,8 @@ impl Container {
     /// returns a new Container
     pub fn new(
         id: [u8; 2],
-        x0: u16,
-        y0: u16,
+        hpos: u16,
+        vpos: u16,
         w: u16,
         h: u16,
         border: Border,
@@ -67,18 +70,25 @@ impl Container {
         Container {
             id,
             w,
-            items: vec![],
+            texts: HashMap::new(),
             h,
-            x0,
-            layer: 0,
+            hpos,
             layout: Layout::Canvas,
-            y0,
+            vpos,
             border,
             padding,
-            bstyle: "".to_string(),
             properties: HashMap::new(),
             attributes: HashSet::new(),
+            colorscheme: ColorScheme::default(),
         }
+    }
+
+    pub fn is_focused(&self) -> bool {
+        self.attributes.contains("focused")
+    }
+
+    pub fn has_attribute(&self, attr: &str) -> bool {
+        self.attributes.contains(attr)
     }
 
     // TODO: bstyle, vstyle and layer should be properties
@@ -96,22 +106,22 @@ impl Container {
     // }
 
     /// changes the border style of this container
-    pub fn bstyle(&mut self, style: &Style) {
-        self.bstyle = style.style();
-    }
+    // pub fn bstyle(&mut self, style: &Style) {
+    //     self.bstyle = style.style();
+    // }
 
     /// returns the id of the parent term of this container
     pub fn parent(&self) -> u8 {
         self.id[0]
     }
 
-    // called on auto and base input/nonedit initializers
+    // called on auto and base input/noedit initializers
     /// checks for the validity of a text object's area before creating it
     pub(super) fn assign_valid_text_area(
         &self, // container
         text: &Text,
     ) -> Result<(), SpaceError> {
-        let [x0, y0] = [text.x0, text.y0];
+        let [x0, y0] = [text.hpos, text.vpos];
         let [w, h] = text.decorate();
 
         // check if new area is bigger than parent container area
@@ -129,9 +139,9 @@ impl Container {
 
         let mut e = 0;
 
-        self.items.iter().for_each(|t| {
+        self.texts.iter().map(|(_, t)| t).for_each(|t| {
             let [top, right, bottom, left] =
-                area_conflicts(x0, y0, text.w, text.h, t.x0, t.y0, t.w, t.h);
+                area_conflicts(x0, y0, text.w, text.h, t.hpos, t.vpos, t.w, t.h);
             // conflict case
             if (left > 0 || right < 0) && (top > 0 || bottom < 0) {
                 // TODO: actually handle overlay logic
