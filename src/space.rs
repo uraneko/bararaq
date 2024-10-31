@@ -11,6 +11,8 @@ use crate::components::{ComponentTree, Container, Term, Text};
 use crate::render_pipeline;
 
 pub mod border;
+pub mod layout;
+pub mod overlay;
 pub mod padding;
 
 use border::Border;
@@ -87,8 +89,8 @@ pub(crate) fn calc_text_abs_ori(
     let ib = if let Border::None = ib { 0 } else { 1 };
 
     [
-        cpol + cb + cpil + cont.x0 + ipol + ib + ipil + ix0 + 1,
-        cpot + cb + cpit + cont.y0 + ipot + ib + ipit + iy0,
+        cpol + cb + cpil + cont.hpos + ipol + ib + ipil + ix0 + 1,
+        cpot + cb + cpit + cont.vpos + ipot + ib + ipit + iy0,
     ]
 }
 
@@ -171,6 +173,7 @@ pub(crate) fn area_conflicts(
 }
 
 // use this instead of width/height
+// later, way later
 #[derive(Debug, Clone)]
 pub enum Polygon {
     Square {
@@ -270,11 +273,47 @@ impl Pos {
     }
 }
 
+pub struct Origin {
+    x: Pos,
+    y: Pos,
+}
+
+impl Origin {
+    fn new(xyz: [Pos; 3]) -> Self {
+        let mut xyz = xyz.into_iter();
+        Self {
+            x: xyz.next().unwrap(),
+            y: xyz.next().unwrap(),
+        }
+    }
+
+    pub fn x(&self) -> Pos {
+        self.x
+    }
+
+    pub fn y(&self) -> Pos {
+        self.y
+    }
+}
+
+// NOTE Pos, Area, Origin, area are only relevant for component creation, for ease of use
+// once the component is created, only direct fields can be used
+
 #[derive(Debug, Clone, Default)]
 pub enum Area {
     #[default]
     Zero,
+    // to use partial fit/fill
+    // need default-width/height properties
+    // FillWidth,
+    // FillHeight,
     Fill,
+    Fit {
+        w: u16,
+        h: u16,
+    },
+    // FitWidth,
+    // FitHeight,
     Values {
         w: u16,
         h: u16,
@@ -282,7 +321,49 @@ pub enum Area {
 }
 
 impl Area {
-    pub fn width(&self) -> Option<u16> {
+    fn new(value: impl Into<Area>) -> Self {
+        value.into()
+    }
+}
+
+impl From<[u16; 2]> for Area {
+    fn from(value: [u16; 2]) -> Area {
+        Area::Value {
+            w: value[0],
+            h: value[1],
+        }
+    }
+}
+
+impl From<(u16, u16)> for Area {
+    fn from(value: (u16, u16)) -> Self {
+        Area::Fit {
+            w: value.0,
+            h: value.1,
+        }
+    }
+}
+
+impl From<()> for Area {
+    fn from(value: ()) -> Self {
+        Area::Zero
+    }
+}
+
+impl<T> From<Option<T>> for Area
+where
+    T: Into<Area>,
+{
+    fn from(value: Option<T>) -> Self {
+        match value {
+            Some(val) => val.into(),
+            None => Area::Fill,
+        }
+    }
+}
+
+impl Area {
+    pub fn w(&self) -> Option<u16> {
         if let Self::Values { w, .. } = self {
             return Some(*w);
         }
@@ -290,7 +371,7 @@ impl Area {
         None
     }
 
-    pub fn height(&self) -> Option<u16> {
+    pub fn h(&self) -> Option<u16> {
         if let Self::Values { h, .. } = self {
             return Some(*h);
         }
@@ -303,6 +384,7 @@ impl Area {
             // FIXME: if area is fill, need to pass on the parent and
             // substract the children areas
             Self::Fill => values,
+            Self::Fit { w, h } => [w, h],
             Self::Zero => [0; 2],
             Self::Values { w, h } => [w, h],
         }
@@ -314,8 +396,8 @@ impl Term {
     pub fn rescale(&mut self, wdiff: u16, hdiff: u16) {
         self.w *= wdiff;
         self.h *= hdiff;
-        self.cx *= wdiff;
-        self.cy *= hdiff;
+        self.crsh *= wdiff;
+        self.crsv *= hdiff;
     }
 }
 
@@ -325,8 +407,8 @@ impl Container {
         let [wdiff, hdiff] = [wnew / self.w, hnew / self.h];
         self.w *= wdiff;
         self.h *= hdiff;
-        self.x0 *= wdiff;
-        self.y0 *= hdiff;
+        self.hpos *= wdiff;
+        self.vpos *= hdiff;
     }
 }
 
@@ -338,14 +420,14 @@ impl Text {
         let [wdiff, hdiff] = [wnew / self.w, hnew / self.h];
         self.w *= wdiff;
         self.h *= hdiff;
-        self.x0 *= wdiff;
-        self.y0 *= hdiff;
+        self.hpos *= wdiff;
+        self.vpos *= hdiff;
 
-        if self.cx >= self.w {
-            self.cx = self.w - 1
+        if self.crsh >= self.w {
+            self.crsh = self.w - 1
         }
-        if self.cy >= self.h {
-            self.cy = self.h - 1
+        if self.crsv >= self.h {
+            self.crsv = self.h - 1
         }
 
         let diff = self.value.len() as isize - (self.w * self.h) as isize;

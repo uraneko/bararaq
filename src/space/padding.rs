@@ -50,7 +50,167 @@ pub enum Padding {
     },
 }
 
+// TODO: need component methods
+// width / width + inner padding / width + outer padding / w ip op b /
+//
+pub trait ComponentCoordinates {
+    fn w(&self) -> u16;
+    fn w_ip(&self) -> u16;
+    fn w_op(&self) -> u16;
+    fn w_b_ip(&self) -> u16;
+    fn w_b_p(&self) -> u16;
+
+    fn h(&self) -> u16;
+    fn h_ip(&self) -> u16;
+    fn h_ip_b(&self) -> u16;
+    fn h_op(&self) -> u16;
+    fn h_b_p(&self) -> u16;
+
+    fn x0(&self);
+    fn ax0(&self);
+    fn x1(&self);
+    fn ax1(&self);
+
+    fn y0(&self);
+    fn ay0(&self);
+    fn y1(&self);
+    fn ay1(&self);
+}
+
+impl From<()> for Padding {
+    fn from(value: ()) -> Self {
+        Self::None
+    }
+}
+
+impl<T> From<[T; 8]> for Padding
+where
+    T: PartialOrd,
+{
+    fn from(value: [T; 8]) -> Self {
+        Self::InOut {
+            inner_top: value[0] as u16,
+            inner_bottom: value[1] as u16,
+            inner_right: value[2] as u16,
+            inner_left: value[3] as u16,
+            outer_top: value[4] as u16,
+            outer_bottom: value[5] as u16,
+            outer_right: value[6] as u16,
+            outer_left: value[7] as u16,
+        }
+    }
+}
+
+impl<T> From<(T, T, T, T, T, T, T, T)> for Padding
+where
+    T: PartialOrd,
+{
+    fn from(value: (T, T, T, T, T, T, T, T)) -> Self {
+        Self::InOut {
+            inner_top: value.0 as u16,
+            inner_bottom: value.1 as u16,
+            inner_right: value.2 as u16,
+            inner_left: value.3 as u16,
+            outer_top: value.4 as u16,
+            outer_bottom: value.5 as u16,
+            outer_right: value.6 as u16,
+            outer_left: value.7 as u16,
+        }
+    }
+}
+
+impl<T> From<(T, T, T, T)> for Padding
+where
+    T: PartialOrd,
+{
+    fn from(value: (T, T, T, T)) -> Self {
+        Self::Inner {
+            top: value.0 as u16,
+            bottom: value.1 as u16,
+            right: value.2 as u16,
+            left: value.3 as u16,
+        }
+    }
+}
+
+impl<T> From<[T; 4]> for Padding
+where
+    T: PartialOrd,
+{
+    fn from(value: [T; 4]) -> Self {
+        Self::Outer {
+            top: value[0] as u16,
+            bottom: value[1] as u16,
+            right: value[2] as u16,
+            left: value[3] as u16,
+        }
+    }
+}
+
+use std::mem::discriminant;
+
+impl From<&Padding> for [u16; 4] {
+    fn from(value: &Padding) -> Self {
+        if let Padding::Inner {
+            ref top,
+            ref bottom,
+            ref right,
+            ref left,
+        } = value
+        {
+            return [top, right, bottom.left];
+        } else if let Padding::Outer {
+            ref top,
+            ref bottom,
+            ref right,
+            ref left,
+        } = value
+        {
+            return [top, right, bottom.left];
+        }
+
+        [0; 4]
+    }
+}
+
+impl From<&Padding> for [u16; 8] {
+    fn from(value: &Padding) -> Self {
+        if let Padding::InOut {
+            ref inner_top,
+            ref inner_bottom,
+            ref inner_right,
+            ref inner_left,
+            ref outer_top,
+            ref outer_bottom,
+            ref outer_right,
+            ref outer_left,
+        } = value
+        {
+            return [
+                inner_top,
+                inner_right,
+                inner_bottom,
+                inner_left,
+                outer_top,
+                outer_right,
+                outer_bottom,
+                outer_left,
+            ];
+        }
+
+        [0; 8]
+    }
+}
+
+fn is_null(value: impl for<'a> From<&'a Padding>) -> bool {
+    value.iter().all(|e| e == 0)
+}
+
 impl Padding {
+    pub fn new(value: impl Into<Padding>) -> Self {
+        value.into()
+    }
+
     /// creates a new Padding with the None variant
     pub fn none() -> Self {
         Padding::None
@@ -74,6 +234,11 @@ impl Padding {
             right,
             left,
         }
+    }
+
+    // FIXME: this should error
+    fn spread(&self, spread_padding: &mut impl From<Padding>) {
+        *spread_padding = self.into();
     }
 
     pub fn in_out(
