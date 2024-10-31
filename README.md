@@ -15,24 +15,24 @@
 ragout is a TUI library written in rust. Implementation wise, this crate sits between crossterm and ratatui. Check features to know what this can be used for. Check examples to know how to use. Check direction to know where the crate is heading.
 
 ## Support 
-Works on Linux amd64 (if you have problems, open an issue describing your problem).
+I'm developing on Arch Linux x86_64 Hyprland. That is to say, there should be no issues on said systems. Linux x86_64 systems should, in general, work.
 
-If the CI builds are passing then, the lib at least builds on Windows amd64 and Apple amd64/aarch64 systems (again, if you encounter a problem, open an issue describing what happened).
+If the CI builds are passing then, the lib at least builds on Windows amd64 and Apple amd64/aarch64 systems (if you encounter a problem, open an issue describing what happened).
 
 ## Features
 \- input: keyboard, mouse, window inputs 
 
 ✓ keyboard input: detect raw bytes keyboard input and decode it into keyboard input events
 
-✓ mouse input: detect raw bytes mouse input and decode it into mouse input events (can be turned off)
+✓ mouse input: detect and decode mouse input events (can be turned off)
 
 ✗ window input: detect window resize, focus and close events.
 
-~ gamepad input: support for gamepad input, meant for ascii games.
+~ gamepad input: support for gamepad input events, meant for ascii games.
 
 \- themes: style components' text, backgrounds and borders.
 
-✓ console utilities: support terminal modes; raw and cooked. Support for alternate screen and mouse input detection switch.
+✓ console utilities: support terminal modes; raw and cooked. Support for alternate screen.
 
 ✗ fonts support: allow user to pick their font families for different texts. Support for double width/height lines.
 
@@ -42,7 +42,12 @@ If the CI builds are passing then, the lib at least builds on Windows amd64 and 
 
 ✗ overlay: support for rendering components with overlay.
 
+~ audio: support fot terminal audio output.
+
+~ journal: add logging capabilities for input events, rendering and components manipulation.
+
 <br>
+
 ✗ not yet implemented 
 
 ~ not yet implemented, low priority.
@@ -56,7 +61,7 @@ If the CI builds are passing then, the lib at least builds on Windows amd64 and 
 ### Installation
 
 > [!IMPORTANT]
-> this crate does not have a working version (will be 0.4.0) yet.
+> this crate does not have a working version yet.
 
 ```bash
 # As this is a library crate, simply use
@@ -66,17 +71,9 @@ cargo add ragout
 ## Examples
 Refer to the examples <a href= "examples/README.md">README</a>.
 
-## Version
-Version before 0.4.0 are sort of a prototype/draft rather than a proper crate. 
-Version 0.4.0 (doesn't exist yet) is the first real version of this crate.
-
 > [!IMPORTANT] 
 > This crate follows the [SemVer Spec](https://semver.org/) versioning scheme.
 > Expect a mess until the crate hits version 1.0.0
 
 <br>
 
-> [!CAUTION]
-> You should not use versions < 0.4.0. Those are depricated, don't have the basic TUI features and have a messy design.
-
-<br>
