@@ -1,45 +1,43 @@
 use crate::components::{Container, Term, Text};
-use crate::layout::Layout;
-use crate::space::{border::Border, padding::Padding, Area, Pos};
+use crate::space::{border::Border, layout::Layout, padding::Padding, Area, Pos};
 
 // pass the meta series to the component making methods in tree and term
 
 #[derive(Debug, Clone)]
-pub struct TermMeta {
+pub struct TermBuilder {
     layout: Layout,
     area: Area,
     id: u8,
 }
 
-impl TermMeta {
-    fn new() -> Self {
+impl TermBuilder {
+    pub fn new() -> Self {
         Self {
-            layout: Layout::Flex { direction: 'r' },
+            layout: Layout::Flex,
             area: Area::Zero,
             id: 0,
         }
     }
 
-    fn id(mut self, id: u8) -> Self {
-        self.id = id;
-        self
+    pub fn id(mut self, id: u8) -> u8 {
+        self.id
     }
 
-    fn layout(mut self, layout: Layout) -> Self {
+    pub fn layout(mut self, layout: Layout) -> Self {
         self.layout = layout;
         self
     }
 
-    fn area(mut self, area: Area) -> Self {
+    pub fn area(mut self, area: Area) -> Self {
         self.area = area;
         self
     }
 
-    fn clear(self) -> Self {
+    pub fn clear(self) -> Self {
         Self::new()
     }
 
-    pub(super) fn term(&mut self) -> Term {
+    pub(super) fn build(&mut self) -> Term {
         Term {
             id: {
                 let id = self.id;
@@ -53,16 +51,19 @@ impl TermMeta {
         }
     }
 
+    pub fn offset_id(&mut self, mut id: u8) {
+        self.id = id;
+    }
+
     fn bump_id(&mut self) {
         self.id += 1;
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct ContainerMeta {
+pub struct ContainerBuilder {
     layer: u8,
-    tid: u8,
-    cid: u8,
+    id: [u8; 2],
     border: Border,
     padding: Padding,
     area: Area,
@@ -71,73 +72,72 @@ pub struct ContainerMeta {
     vpos: Pos,
 }
 
-impl ContainerMeta {
-    fn new() -> Self {
+impl ContainerBuilder {
+    pub fn new() -> Self {
         Self {
             layer: 0,
-            tid: 0,
-            cid: 0,
+            id: [0; 2],
             padding: Padding::None,
             border: Border::None,
             area: Area::Fill,
             hpos: Pos::Center,
             vpos: Pos::Center,
-            layout: Layout::Flex { direction: 'r' },
+            layout: Layout::Flex,
         }
     }
 
-    fn overlay(mut self, overlay: bool) -> Self {
+    pub fn overlay(mut self, overlay: bool) -> Self {
         self
     }
 
-    fn layer(mut self, layer: u8) -> Self {
+    pub fn layer(mut self, layer: u8) -> Self {
         self.layer = layer;
         self
     }
 
-    fn border(mut self, border: Border) -> Self {
+    pub fn border(mut self, border: Border) -> Self {
         self.border = border;
         self
     }
 
-    fn padding(mut self, padding: Padding) -> Self {
+    pub fn padding(mut self, padding: Padding) -> Self {
         self.padding = padding;
         self
     }
 
-    fn area(mut self, area: Area) -> Self {
+    pub fn area(mut self, area: Area) -> Self {
         self.area = area;
         self
     }
 
-    fn hpos(mut self, hpos: Pos) -> Self {
+    pub fn hpos(mut self, hpos: Pos) -> Self {
         self.hpos = hpos;
         self
     }
 
-    fn vpos(mut self, vpos: Pos) -> Self {
+    pub fn vpos(mut self, vpos: Pos) -> Self {
         self.vpos = vpos;
         self
     }
 
-    fn layout(mut self, layout: Layout) -> Self {
+    pub fn layout(mut self, layout: Layout) -> Self {
         self.layout = layout;
         self
     }
 
-    fn bump_tid(&mut self, id: u8) {
-        self.tid = id;
+    pub fn bump_tid(&mut self, id: u8) {
+        self.id[0] = id;
     }
 
-    fn bump_cid(&mut self, id: u8) {
-        self.cid = id
+    pub fn bump_cid(&mut self, id: u8) {
+        self.id[1] = id
     }
 
-    fn id(&self) -> [u8; 2] {
-        [self.tid, self.cid]
+    pub fn id(&self) -> [u8; 2] {
+        self.id
     }
 
-    pub(super) fn container(&mut self) -> Container {
+    pub(super) fn build(&mut self) -> Container {
         Container {
             id: self.id(),
             layout: self.layout.clone(),
@@ -147,17 +147,41 @@ impl ContainerMeta {
         }
     }
 
+    pub fn offset_id(&mut self, mut id: Vec<u8>) -> Result<u8, BuilderError> {
+        match id.len() {
+            0 => return Ok(0),
+            1 => {
+                self.id[0] = id[0];
+                return Ok(1);
+            }
+            2 => {
+                self.id = [id[0], id[1]];
+                return Ok(2);
+            }
+            _ => return Err(BuilderError::TooManyIds),
+        }
+    }
+
     fn clear(self) -> Self {
         Self::new()
     }
 }
 
+#[derive(Debug)]
+pub enum BuilderTreeError {
+    IdInUse,
+}
+#[derive(Debug)]
+pub enum BuilderError {
+    InvalidInputId,
+    InvalidNoEditId,
+    TooManyIds,
+}
+
 #[derive(Debug, Clone)]
-pub struct InputMeta {
+pub struct InputBuilder {
     layer: u8,
-    tid: u8,
-    cid: u8,
-    iid: u8,
+    id: [u8; 3],
     border: Border,
     padding: Padding,
     area: Area,
@@ -165,13 +189,11 @@ pub struct InputMeta {
     vpos: Pos,
 }
 
-impl InputMeta {
-    fn new() -> Self {
+impl InputBuilder {
+    pub fn new() -> Self {
         Self {
             layer: 0,
-            tid: 0,
-            cid: 0,
-            iid: 0,
+            id: [0; 3],
             padding: Padding::None,
             border: Border::None,
             area: Area::Fill,
@@ -180,44 +202,44 @@ impl InputMeta {
         }
     }
 
-    fn layer(mut self, layer: u8) -> Self {
+    pub fn layer(mut self, layer: u8) -> Self {
         self.layer = layer;
         self
     }
 
-    fn border(mut self, border: Border) -> Self {
+    pub fn border(mut self, border: Border) -> Self {
         self.border = border;
         self
     }
 
-    fn padding(mut self, padding: Padding) -> Self {
+    pub fn padding(mut self, padding: Padding) -> Self {
         self.padding = padding;
         self
     }
 
-    fn area(mut self, area: Area) -> Self {
+    pub fn area(mut self, area: Area) -> Self {
         self.area = area;
         self
     }
 
-    fn hpos(mut self, hpos: Pos) -> Self {
+    pub fn hpos(mut self, hpos: Pos) -> Self {
         self.hpos = hpos;
         self
     }
 
-    fn vpos(mut self, vpos: Pos) -> Self {
+    pub fn vpos(mut self, vpos: Pos) -> Self {
         self.vpos = vpos;
         self
     }
 
-    fn clear(self) -> Self {
+    pub fn clear(self) -> Self {
         Self::new()
     }
 
-    pub fn input(&mut self) -> Text {
+    pub fn build(&mut self) -> Text {
         Text {
             id: {
-                let id = self.iid();
+                let id = self.id();
                 self.bump_iid();
                 id
             },
@@ -227,89 +249,110 @@ impl InputMeta {
         }
     }
 
+    pub fn offset_id(&mut self, mut id: Vec<u8>) -> Result<u8, BuilderError> {
+        match id.len() {
+            0 => return Ok(0),
+            1 => {
+                self.id[0] = id[0];
+                return Ok(1);
+            }
+            2 => {
+                self.id = [id[0], id[1], self.id[2]];
+                return Ok(2);
+            }
+            3 => {
+                if id[2] % 2 != 0 {
+                    return Err(BuilderError::InvalidInputId);
+                }
+
+                self.id = [id[0], id[1], id[2]];
+                return Ok(3);
+            }
+            _ => return Err(BuilderError::TooManyIds),
+        }
+    }
+
     fn bump_tid(&mut self) {
-        self.tid += 1;
+        self.id[0] += 1;
     }
 
     fn bump_cid(&mut self) {
-        self.cid += 1;
+        self.id[1] += 1;
     }
 
     fn bump_iid(&mut self) {
-        self.iid += 2;
+        self.id[2] += 2;
     }
 
     pub(super) fn cid(&self) -> [u8; 2] {
-        [self.tid, self.cid]
+        [self.id[0], self.id[1]]
     }
 
-    pub(super) fn iid(&self) -> [u8; 3] {
-        [self.tid, self.cid, self.iid]
+    pub(super) fn id(&self) -> [u8; 3] {
+        self.id
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct NonEditMeta {
+pub struct NoEditBuilder {
     layer: u8,
-    tid: u8,
-    cid: u8,
-    neid: u8,
+    id: [u8; 3],
     border: Border,
     padding: Padding,
     area: Area,
     hpos: Pos,
     vpos: Pos,
+    id_stock: Vec<[u8; 3]>,
 }
 
-impl NonEditMeta {
-    fn new() -> Self {
+impl NoEditBuilder {
+    pub fn new() -> Self {
         Self {
             layer: 0,
-            tid: 0,
-            cid: 0,
-            neid: 0,
+            id: [0; 3],
             padding: Padding::None,
             border: Border::None,
             area: Area::Fill,
             hpos: Pos::Center,
             vpos: Pos::Center,
+            id_stock: vec![],
         }
     }
 
-    fn border(mut self, border: Border) -> Self {
+    pub fn border(mut self, border: Border) -> Self {
         self.border = border;
         self
     }
 
-    fn padding(mut self, padding: Padding) -> Self {
+    pub fn padding(mut self, padding: Padding) -> Self {
         self.padding = padding;
         self
     }
 
-    fn area(mut self, area: Area) -> Self {
+    pub fn area(mut self, area: Area) -> Self {
         self.area = area;
         self
     }
 
-    fn hpos(mut self, hpos: Pos) -> Self {
+    pub fn hpos(mut self, hpos: Pos) -> Self {
         self.hpos = hpos;
         self
     }
 
-    fn vpos(mut self, vpos: Pos) -> Self {
+    pub fn vpos(mut self, vpos: Pos) -> Self {
         self.vpos = vpos;
         self
     }
 
-    fn clear(self) -> Self {
+    pub fn clear(self) -> Self {
         Self::new()
     }
 
-    pub fn nonedit(&mut self, value: Vec<Option<char>>) -> Text {
+    pub fn build(&mut self) -> Text {
         Text {
-            value,
+            value: self.value,
             id: {
-                let id = self.neid();
+                let id = self.id();
                 self.bump_neid();
                 id
             },
@@ -319,23 +362,46 @@ impl NonEditMeta {
         }
     }
 
+    pub fn offset_id(&mut self, mut id: Vec<u8>) -> Result<u8, BuilderError> {
+        match id.len() {
+            0 => return Ok(0),
+            1 => {
+                self.id[0] = id[0];
+                return Ok(1);
+            }
+            2 => {
+                self.id = [id[0], id[1], self.id[2]];
+                return Ok(2);
+            }
+            3 => {
+                if id[2] % 2 == 0 {
+                    return Err(BuilderError::InvalidNoEditId);
+                }
+
+                self.id = [id[0], id[1], id[2]];
+                return Ok(3);
+            }
+            _ => return Err(BuilderError::TooManyIds),
+        }
+    }
+
     fn bump_tid(&mut self) {
-        self.tid += 1;
+        self.id[0] += 1;
     }
 
     fn bump_cid(&mut self) {
-        self.cid += 1;
+        self.id[1] += 1;
     }
 
     fn bump_neid(&mut self) {
-        self.neid += 2;
+        self.id[2] += 2;
     }
 
     pub(super) fn cid(&self) -> [u8; 2] {
-        [self.tid, self.cid]
+        [self.id[0], self.id[1]]
     }
 
-    pub(super) fn neid(&self) -> [u8; 3] {
-        [self.tid, self.cid, self.neid]
+    pub(super) fn id(&self) -> [u8; 3] {
+        self.id
     }
 }
