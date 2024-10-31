@@ -4,58 +4,28 @@ use std::ops::Range;
 
 pub type Properties = HashMap<String, Property>;
 
-trait PMap {
-    fn grab_ref(&self, k: &str) -> Option<&Property>;
-
-    fn grab_mut(&mut self, k: &str) -> Option<&mut Property>;
-
-    fn assign(&mut self, k: &str, v: impl IsProperty) -> Option<Property>;
-
-    fn discard(&mut self, k: &str) -> Option<Property>;
-
-    fn contains(&self, k: &str) -> bool;
-}
-
-impl PMap for Properties {
-    fn grab_ref(&self, k: &str) -> Option<&Property> {
-        self.get(k)
-    }
-
-    fn grab_mut(&mut self, k: &str) -> Option<&mut Property> {
-        self.get_mut(k)
-    }
-
-    fn assign(&mut self, k: &str, v: impl IsProperty) -> Option<Property> {
-        self.insert(k.to_string(), Property::new(v))
-    }
-
-    fn discard(&mut self, k: &str) -> Option<Property> {
-        self.remove(k)
-    }
-
-    fn contains(&self, k: &str) -> bool {
-        self.contains_key(k)
-    }
-}
-
 #[derive(Debug, PartialEq)]
 enum PropertyError {
     NoSuchVariant,
 }
 
-pub(crate) enum Property {
-    String(String),
-    Fn(Box<dyn FnMut(Property) -> Property>),
-    Range(std::ops::Range<u64>),
-    Char(char),
-    Int(i64),
-    UInt(u64),
-    Float(f64),
-    Bool(bool),
-    Vec(Vec<Property>),
-    Map(HashMap<String, Property>),
-    None,
-    Err(PropertyError),
+pub trait PropertyMap {
+    fn put(&mut self, key: String, value: impl Into<Property>) -> Option<Property> {
+        self.insert(key, value.into())
+    }
+}
+
+pub enum Property {
+    PStr(String),
+    PFn(Box<dyn FnMut(Property) -> Property>),
+    PRng(std::ops::Range<u64>),
+    PChr(char),
+    PInt(i64),
+    PUInt(u64),
+    PFloat(f64),
+    PBool(bool),
+    PVec(Vec<Property>),
+    PMap(HashMap<String, Property>),
 }
 
 // TODO: phase out my type_id method in favor of std::any::{Any, TypeId}
@@ -68,129 +38,106 @@ impl std::fmt::Debug for Property {
             format!(
                 "{}",
                 match self {
-                    Self::String(s) => format!("{:?}", s),
+                    Self::PStr(s) => format!("{:?}", s),
                     Self::Fn(f) => format!("{:?}", std::any::type_name_of_val(f)),
-                    Self::Range(r) => format!("{:?}", r),
+                    Self::PRng(r) => format!("{:?}", r),
                     Self::Char(c) => format!("{:?}", c),
-                    Self::Int(i) => format!("{:?}", i),
-                    Self::UInt(u) => format!("{:?}", u),
+                    Self::PInt(i) => format!("{:?}", i),
+                    Self::PUInt(u) => format!("{:?}", u),
                     Self::Float(f) => format!("{:?}", f),
                     Self::Bool(b) => format!("{:?}", b),
                     Self::Vec(v) => format!("{:?}", v),
                     Self::Map(m) => format!("{:?}", m),
-                    Self::None => format!("None",),
-                    Self::Err(e) => format!("{:?}", e),
                 }
             )
         )
     }
 }
 
-trait IsProperty {
-    fn to_any(self) -> Box<dyn Any>;
-    fn type_id(&self) -> char;
-}
-
-impl IsProperty for String {
-    fn to_any(self) -> Box<dyn Any> {
-        Box::new(self)
-    }
-
-    fn type_id(&self) -> char {
-        'S'
+impl From<&str> for Property {
+    fn from(value: &str) -> Self {
+        Self::PStr(value.to_string())
     }
 }
 
-impl<T> IsProperty for T
+impl From<String> for Property {
+    fn from(value: String) -> Self {
+        Self::PStr(value)
+    }
+}
+
+impl<T> From<[T; 2]> for Property
+where
+    T: PartialOrd,
+{
+    fn from(value: [T; 2]) -> Self {
+        Self::PRng(Range {
+            start: value[0] as u64,
+            end: value[1] as u64,
+        })
+    }
+}
+
+impl<T> From<(T, T)> for Property
+where
+    T: PartialOrd,
+{
+    fn from(value: (T, T)) -> Self {
+        Self::PRng(Range {
+            start: value.0 as u64,
+            end: value.1 as u64,
+        })
+    }
+}
+
+impl From<char> for Property {
+    fn from(value: char) -> Self {
+        Property::Char(value)
+    }
+}
+
+impl From<i64> for Property {
+    fn from(value: i64) -> Self {
+        Self::PInt(value)
+    }
+}
+
+impl From<u64> for Property {
+    fn from(value: u64) -> Self {
+        Self::PUInt(value)
+    }
+}
+
+impl From<f64> for Property {
+    fn from(value: f64) -> Self {
+        Self::Float(value)
+    }
+}
+
+impl From<bool> for Property {
+    fn from(value: bool) -> Self {
+        Self::Bool(value)
+    }
+}
+
+impl From<Vec<Property>> for Property {
+    fn from(value: Vec<Property>) -> Self {
+        Self::Vec(value)
+    }
+}
+
+impl From<Properties> for Property {
+    fn from(value: Properties) -> Self {
+        Self::Map(value)
+    }
+}
+
+impl<T> From<T> for Property
 where
     T: FnMut(Property) -> Property + 'static,
 {
-    fn to_any(self) -> Box<dyn Any> {
-        Box::new(self)
-    }
-
-    fn type_id(&self) -> char {
-        'F'
-    }
-}
-
-impl IsProperty for Range<u64> {
-    fn to_any(self) -> Box<dyn Any> {
-        Box::new(self)
-    }
-
-    fn type_id(&self) -> char {
-        'r'
-    }
-}
-
-impl IsProperty for char {
-    fn to_any(self) -> Box<dyn Any> {
-        Box::new(self)
-    }
-
-    fn type_id(&self) -> char {
-        'c'
-    }
-}
-
-impl IsProperty for i64 {
-    fn to_any(self) -> Box<dyn Any> {
-        Box::new(self)
-    }
-
-    fn type_id(&self) -> char {
-        'i'
-    }
-}
-
-impl IsProperty for u64 {
-    fn to_any(self) -> Box<dyn Any> {
-        Box::new(self)
-    }
-
-    fn type_id(&self) -> char {
-        'u'
-    }
-}
-
-impl IsProperty for f64 {
-    fn to_any(self) -> Box<dyn Any> {
-        Box::new(self)
-    }
-
-    fn type_id(&self) -> char {
-        'f'
-    }
-}
-
-impl IsProperty for bool {
-    fn to_any(self) -> Box<dyn Any> {
-        Box::new(self)
-    }
-
-    fn type_id(&self) -> char {
-        'b'
-    }
-}
-
-impl IsProperty for Vec<Property> {
-    fn to_any(self) -> Box<dyn Any> {
-        Box::new(self)
-    }
-
-    fn type_id(&self) -> char {
-        'V'
-    }
-}
-
-impl IsProperty for Properties {
-    fn to_any(self) -> Box<dyn Any> {
-        Box::new(self)
-    }
-
-    fn type_id(&self) -> char {
-        'M'
+    fn from(value: T) -> Self {
+        Self::Fn(Box::new(value))
     }
 }
 
@@ -204,45 +151,27 @@ impl std::cmp::PartialEq for Property {
         }
 
         match (self, other) {
-            (Self::String(s), Self::String(o)) => s == o,
-            (Self::Range(s), Self::Range(o)) => s == o,
+            (Self::PStr(s), Self::PStr(o)) => s == o,
+            (Self::PRng(s), Self::PRng(o)) => s == o,
             (Self::Char(s), Self::Char(o)) => s == o,
-            (Self::Int(s), Self::Int(o)) => s == o,
-            (Self::UInt(s), Self::UInt(o)) => s == o,
+            (Self::PInt(s), Self::PInt(o)) => s == o,
+            (Self::PUInt(s), Self::PUInt(o)) => s == o,
             (Self::Float(s), Self::Float(o)) => s == o,
             (Self::Bool(s), Self::Bool(o)) => s == o,
             (Self::Vec(s), Self::Vec(o)) => s == o,
             (Self::Map(s), Self::Map(o)) => s == o,
-            (Self::Err(s), Self::Err(o)) => s == o,
-            (Self::None, Self::None) => true,
             _ => false,
         }
     }
 }
 
 impl Property {
-    fn is_none(&self) -> bool {
-        self == &Self::None
-    }
-
-    fn is_err(&self) -> bool {
-        discriminant(self) == discriminant(&Self::Err(PropertyError::NoSuchVariant))
-    }
-
-    fn is_err_get(&self) -> Option<&PropertyError> {
-        if let Self::Err(e) = self {
-            Some(e)
-        } else {
-            None
-        }
-    }
-
     fn is_fn(&self) -> bool {
-        discriminant(self) == discriminant(&Self::Fn(Box::new(|a: Self| Self::None)))
+        discriminant(self) == discriminant(&Self::Fn(Box::new(|a: Self| Self::Char('a'))))
     }
 
     fn is_range(&self) -> bool {
-        discriminant(self) == discriminant(&Self::Range(Range { start: 0, end: 1 }))
+        discriminant(self) == discriminant(&Self::PRng(Range { start: 0, end: 1 }))
     }
 
     fn is_char(&self) -> bool {
@@ -250,11 +179,11 @@ impl Property {
     }
 
     fn is_int(&self) -> bool {
-        discriminant(self) == discriminant(&Self::Int(0i64))
+        discriminant(self) == discriminant(&Self::PInt(0i64))
     }
 
     fn is_uint(&self) -> bool {
-        discriminant(self) == discriminant(&Self::UInt(0u64))
+        discriminant(self) == discriminant(&Self::PUInt(0u64))
     }
 
     fn is_float(&self) -> bool {
@@ -286,7 +215,7 @@ trait UnwrapVal {
 
 impl UnwrapVal for Option<Property> {
     fn str(self) -> String {
-        let Some(Property::String(s)) = self else {
+        let Some(Property::PStr(s)) = self else {
             panic!()
         };
 
@@ -294,7 +223,7 @@ impl UnwrapVal for Option<Property> {
     }
 
     fn range(self) -> Range<u64> {
-        let Some(Property::Range(r)) = self else {
+        let Some(Property::PRng(r)) = self else {
             panic!()
         };
 
@@ -330,7 +259,7 @@ trait UnwrapRef {
 
 impl UnwrapRef for Option<&Property> {
     fn str_ref(&self) -> &str {
-        let Some(Property::String(ref s)) = self else {
+        let Some(Property::PStr(ref s)) = self else {
             panic!()
         };
 
@@ -338,7 +267,7 @@ impl UnwrapRef for Option<&Property> {
     }
 
     fn range_ref(&self) -> &Range<u64> {
-        let Some(Property::Range(ref r)) = self else {
+        let Some(Property::PRng(ref r)) = self else {
             panic!()
         };
 
@@ -373,7 +302,7 @@ trait UnwrapMut {
 
 impl UnwrapMut for Option<&mut Property> {
     fn str_mut(&mut self) -> &mut String {
-        let Some(Property::String(ref mut s)) = self else {
+        let Some(Property::PStr(ref mut s)) = self else {
             panic!()
         };
 
@@ -381,7 +310,7 @@ impl UnwrapMut for Option<&mut Property> {
     }
 
     fn range_mut(&mut self) -> &mut Range<u64> {
-        let Some(Property::Range(ref mut r)) = self else {
+        let Some(Property::PRng(ref mut r)) = self else {
             panic!()
         };
 
@@ -441,7 +370,7 @@ impl UnwrapPrimitive for Option<&Property> {
     }
 
     fn uint(&self) -> u64 {
-        let Some(Property::UInt(u)) = self else {
+        let Some(Property::PUInt(u)) = self else {
             panic!()
         };
 
@@ -449,7 +378,7 @@ impl UnwrapPrimitive for Option<&Property> {
     }
 
     fn int(&self) -> i64 {
-        let Some(Property::Int(i)) = self else {
+        let Some(Property::PInt(i)) = self else {
             panic!()
         };
 
@@ -483,7 +412,7 @@ impl UnwrapPrimitive for Option<Property> {
     }
 
     fn uint(&self) -> u64 {
-        let Some(Property::UInt(u)) = self else {
+        let Some(Property::PUInt(u)) = self else {
             panic!("not a u64")
         };
 
@@ -491,7 +420,7 @@ impl UnwrapPrimitive for Option<Property> {
     }
 
     fn int(&self) -> i64 {
-        let Some(Property::Int(i)) = self else {
+        let Some(Property::PInt(i)) = self else {
             panic!("not an i64")
         };
 
@@ -516,24 +445,7 @@ impl UnwrapPrimitive for Option<Property> {
 }
 
 impl Property {
-    fn new(v: impl IsProperty) -> Self {
-        let type_id = v.type_id();
-        let v = v.to_any();
-        match type_id {
-            'S' => Self::String(*v.downcast::<String>().unwrap()),
-            'F' => Self::Fn(
-                *v.downcast::<Box<dyn FnMut(Property) -> Property>>()
-                    .unwrap(),
-            ),
-            'r' => Self::Range(*v.downcast::<Range<u64>>().unwrap()),
-            'c' => Self::Char(*v.downcast::<char>().unwrap()),
-            'i' => Self::Int(*v.downcast::<i64>().unwrap()),
-            'u' => Self::UInt(*v.downcast::<u64>().unwrap()),
-            'f' => Self::Float(*v.downcast::<f64>().unwrap()),
-            'b' => Self::Bool(*v.downcast::<bool>().unwrap()),
-            'V' => Self::Vec(*v.downcast::<Vec<Property>>().unwrap()),
-            'M' => Self::Map(*v.downcast::<Properties>().unwrap()),
-            _ => Self::Err(PropertyError::NoSuchVariant),
-        }
+    fn new(value: impl Into<Property>) -> Self {
+        value.into()
     }
 }
