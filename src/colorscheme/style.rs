@@ -1,7 +1,4 @@
-use std::collections::HashMap;
-use std::io::StdoutLock;
-use std::io::Write;
-use std::ops::Range;
+use super::color::Color;
 
 /// abstraction over the vt100 terminal's graphic rendition function
 #[derive(Debug, Default)]
@@ -11,45 +8,17 @@ pub struct Style {
     background: Option<Color>,
 }
 
-#[derive(Default, Debug)]
-struct Color {
-    r: u8,
-    g: u8,
-    b: u8,
-}
-
-impl Color {
-    fn new(r: u8, g: u8, b: u8) -> Self {
-        Self { r, g, b }
-    }
-
-    fn text(&self, style: &mut String) {
-        let color = format!("38;2;{};{};{};", self.r, self.g, self.b);
-        style.push_str(&color)
-    }
-
-    fn background(&self, style: &mut String) {
-        let color = format!("48;2;{};{};{};", self.r, self.g, self.b);
-        style.push_str(&color)
-    }
-
-    fn red(&mut self, r: u8) {
-        self.r = r;
-    }
-
-    fn green(&mut self, g: u8) {
-        self.g = g;
-    }
-
-    fn blue(&mut self, b: u8) {
-        self.b = b;
-    }
-
-    fn array(&self) -> [u8; 3] {
-        [self.r, self.g, self.b]
-    }
-}
-
+/// can only have one combination that results in the same sum
+/// 0 means reset all
+/// 1 means bold
+/// 2 means underline
+/// 4 means double underline
+/// 8 means italic
+/// 16 means reverse
+/// 32 means conceal
+/// 64 means blink
+/// 128 means faint
+/// the greatest effects config value possible is 255
 impl Style {
     const RESET: u8 = 0; // 0
     const BOLD: u8 = 1; // 1
@@ -320,50 +289,6 @@ impl Style {
     }
 }
 
-/// can only have one combination that results in the same sum
-/// 0 means reset all
-/// 1 means bold
-/// 2 means underline
-/// 4 means double underline
-/// 8 means italic
-/// 16 means reverse
-/// 32 means conceal
-/// 64 means blink
-/// 128 means faint
-/// the greatest effects config value possible is 255
-
-#[cfg(test)]
-mod color {
-    use super::Color;
-
-    #[test]
-    fn color() {
-        let color = Color::new(23, 42, 22);
-
-        let mut s = String::new();
-
-        color.text(&mut s);
-        assert_eq!(&s[..], "38;2;23;42;22;");
-        s.clear();
-        color.background(&mut s);
-        assert_eq!(&s[..], "48;2;23;42;22;");
-    }
-
-    #[test]
-    fn atomic() {
-        let mut color = Color::new(43, 5, 34);
-
-        color.red(1);
-        assert_eq!(color.r, 1);
-
-        color.green(1);
-        assert_eq!(color.g, 1);
-
-        color.blue(1);
-        assert_eq!(color.b, 1);
-    }
-}
-
 #[cfg(test)]
 mod styles {
     use super::Style;
@@ -420,39 +345,4 @@ mod styles {
         s.dump_style(&mut t);
         assert_eq!(&t[..], "\x1b[48;2;34;34;34m");
     }
-}
-
-// TODO: add some template theme functions to ragout-extended
-// NOTE: border/text themes should be part of the properties and attributes functionalities
-// example custom theme on some component text/border value
-fn theme(value: &[char], styles: &[Style]) -> String {
-    // example custom theme
-    let mut idx = 0;
-    value
-        .into_iter()
-        .map(|c| {
-            let mut sc = styles[idx].style();
-            sc.push(*c);
-            if idx == styles.len() - 1 {
-                idx = 0
-            } else {
-                idx += 1;
-            }
-
-            sc
-        })
-        .collect::<String>()
-}
-
-// takes a value str and a slice of patterns
-// returns a collection of two things the value as items broken by all patterns and the pattern kind of the item
-pub fn iter_pats(value: &str, pats: &[&str]) {}
-
-pub enum Patterns {
-    StartsWith(&'static str),
-    EndsWith(&'static str),
-    StartsEndWith(&'static str),
-    Contains(&'static str),
-    Excludes(&'static str),
-    Equals(&'static str),
 }
