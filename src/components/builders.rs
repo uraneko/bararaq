@@ -295,3 +295,10 @@ impl TextBuilder {
 
 // TODO: phase out input and noedit
 // in favor of text with editable field
+
+// TODO: make comps traits or keep then as structs?
+// this is da way
+// traits are da way
+// text container term and tree should be traits
+// my own types should be things like input, popup, button, ...
+// user implements term or tree on their own type to make an app
