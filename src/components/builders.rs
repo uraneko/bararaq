@@ -179,7 +179,7 @@ pub enum BuilderError {
 }
 
 #[derive(Debug, Clone)]
-pub struct InputBuilder {
+pub struct TextBuilder {
     layer: u8,
     id: [u8; 3],
     border: Border,
@@ -189,7 +189,7 @@ pub struct InputBuilder {
     vpos: Pos,
 }
 
-impl InputBuilder {
+impl TextBuilder {
     pub fn new() -> Self {
         Self {
             layer: 0,
@@ -293,115 +293,5 @@ impl InputBuilder {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct NoEditBuilder {
-    layer: u8,
-    id: [u8; 3],
-    border: Border,
-    padding: Padding,
-    area: Area,
-    hpos: Pos,
-    vpos: Pos,
-    id_stock: Vec<[u8; 3]>,
-}
-
-impl NoEditBuilder {
-    pub fn new() -> Self {
-        Self {
-            layer: 0,
-            id: [0; 3],
-            padding: Padding::None,
-            border: Border::None,
-            area: Area::Fill,
-            hpos: Pos::Center,
-            vpos: Pos::Center,
-            id_stock: vec![],
-        }
-    }
-
-    pub fn border(mut self, border: Border) -> Self {
-        self.border = border;
-        self
-    }
-
-    pub fn padding(mut self, padding: Padding) -> Self {
-        self.padding = padding;
-        self
-    }
-
-    pub fn area(mut self, area: Area) -> Self {
-        self.area = area;
-        self
-    }
-
-    pub fn hpos(mut self, hpos: Pos) -> Self {
-        self.hpos = hpos;
-        self
-    }
-
-    pub fn vpos(mut self, vpos: Pos) -> Self {
-        self.vpos = vpos;
-        self
-    }
-
-    pub fn clear(self) -> Self {
-        Self::new()
-    }
-
-    pub fn build(&mut self) -> Text {
-        Text {
-            value: self.value,
-            id: {
-                let id = self.id();
-                self.bump_neid();
-                id
-            },
-            w: self.area.width().unwrap_or(0),
-            h: self.area.height().unwrap_or(0),
-            ..Default::default()
-        }
-    }
-
-    pub fn offset_id(&mut self, mut id: Vec<u8>) -> Result<u8, BuilderError> {
-        match id.len() {
-            0 => return Ok(0),
-            1 => {
-                self.id[0] = id[0];
-                return Ok(1);
-            }
-            2 => {
-                self.id = [id[0], id[1], self.id[2]];
-                return Ok(2);
-            }
-            3 => {
-                if id[2] % 2 == 0 {
-                    return Err(BuilderError::InvalidNoEditId);
-                }
-
-                self.id = [id[0], id[1], id[2]];
-                return Ok(3);
-            }
-            _ => return Err(BuilderError::TooManyIds),
-        }
-    }
-
-    fn bump_tid(&mut self) {
-        self.id[0] += 1;
-    }
-
-    fn bump_cid(&mut self) {
-        self.id[1] += 1;
-    }
-
-    fn bump_neid(&mut self) {
-        self.id[2] += 2;
-    }
-
-    pub(super) fn cid(&self) -> [u8; 2] {
-        [self.id[0], self.id[1]]
-    }
-
-    pub(super) fn id(&self) -> [u8; 3] {
-        self.id
-    }
-}
+// TODO: phase out input and noedit
+// in favor of text with editable field
