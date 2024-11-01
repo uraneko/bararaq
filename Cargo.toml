@@ -1,15 +1,15 @@
 [package]
-name = "ragout"
+name = "bararaq"
 version = "0.31.32"
 edition = "2021"
 description = "Terminal raw mode utilities"
 license = "MIT"
-repository = "https://github.com/uraneko/ragout"
+repository = "https://github.com/uraneko/bararaq"
 readme = "README.md"
 keywords = ["terminal", "raw_mode", "cli", "tui_lib"]
 categories = ["command-line-interface"]
 exclude = ["Cargo.lock"]
-documentation = "https://docs.rs/ragout"
+documentation = "https://docs.rs/bararaq"
 
 [[example]]
 name = "inputs"

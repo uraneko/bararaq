@@ -102,7 +102,7 @@ impl Char {
                 "already asserted these bytes, 
                 if you really do reach here, it's because
                 i let some cases get away in my assertions\r\n
-                Please open an issue here \"https://github.com/uraneko/ragout\" 
+                Please open an issue here \"https://github.com/uraneko/bararaq\" 
                 so that i can fix the bug"
             ),
         })

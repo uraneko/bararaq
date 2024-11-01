@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use ragout::components::property::{PMap, Properties};
+use bararaq::components::property::{PMap, Properties};
 
 fn main() {
     let mut map = Properties::new();

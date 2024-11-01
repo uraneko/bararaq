@@ -28,7 +28,7 @@ impl Term {
     // }
 
     // TODO: deprecate interactive in favor of focus property field
-    // which should be part of ragout-components crate
+    // which should be part of bararaq-components crate
 
     /// renders only the demanded components' parts,
     /// decides what to render based on given property fields's key and values for border, value and

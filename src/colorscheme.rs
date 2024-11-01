@@ -15,7 +15,7 @@ pub trait ComponentColors {}
 /// 'p is the lifetime of the borrowed pattern value in the Pattern
 type StyleGroup<'sp: 'p, 'p> = HashMap<&'sp Pattern<'p>, &'sp Style>;
 
-// TODO: add some template theme functions to ragout-extended
+// TODO: add some template theme functions to bararaq-extra
 // NOTE: border/text themes should be part of the properties and attributes functionalities
 // example custom theme on some component text/border value
 // styles should be a hashmap of <Pattern, Style>
@@ -97,7 +97,7 @@ use std::io::StdoutLock;
 use std::io::Write;
 use std::ops::Range;
 
-// TODO: add some template theme functions to ragout-extended
+// TODO: add some template theme functions to bararaq-extra
 // NOTE: border/text themes should be part of the properties and attributes functionalities
 // example custom theme on some component text/border value
 fn theme(value: &[char], styles: &[Style]) -> String {

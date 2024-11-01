@@ -1,4 +1,4 @@
-//! ragout is a zero dependencies tui crate
+//! bararaq is a zero dependencies tui crate
 #![allow(warnings)]
 // #![deny(missing_docs)]
 /// defines the 4 basic objects; ComponentTree, Term, Container and Text

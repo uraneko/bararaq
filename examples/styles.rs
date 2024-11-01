@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use ragout::colorscheme::*;
+use bararaq::colorscheme::*;
 
 const COLORS: [[u8; 3]; 7] = [
     [222, 56, 43],   // pink

@@ -161,7 +161,7 @@ impl Term {
 
     /// makes the text object with the given id the term's current active object
     /// places cursor in the new position by calling sync_cursor
-    // TODO: probably make the entire focus part of ragout-extended crate
+    // TODO: probably make the entire focus part of bararaq-extra crate
     pub fn focus(&mut self, id: &[u8; 3]) -> Result<(), TreeError> {
         let condition = match id[2] % 2 == 0 {
             true => self.has_input(&id),

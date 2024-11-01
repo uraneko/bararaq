@@ -1,9 +1,9 @@
-use ragout::components::{ComponentTree as CT, Container, Term, Text};
-use ragout::console::{
+use bararaq::components::{ComponentTree as CT, Container, Term, Text};
+use bararaq::console::{
     cooked_mode, enter_alternate_screen, leave_alternate_screen, raw_mode, workers,
 };
-use ragout::frames;
-use ragout::space::{border::Border, padding::Padding, Area, Pos};
+use bararaq::frames;
+use bararaq::space::{border::Border, padding::Padding, Area, Pos};
 
 use std::io::Write;
 

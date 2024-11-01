@@ -1,8 +1,8 @@
-use ragout::console::raw_mode::{cooked_mode, raw_mode};
-use ragout::console::winsize::winsize;
-use ragout::inputs::keyboard::{Char, KbdEvent, Modifiers};
-use ragout::inputs::mouse::{disable_mouse_input, enable_mouse_input};
-use ragout::inputs::{event, read, Interaction};
+use bararaq::console::raw_mode::{cooked_mode, raw_mode};
+use bararaq::console::winsize::winsize;
+use bararaq::inputs::keyboard::{Char, KbdEvent, Modifiers};
+use bararaq::inputs::mouse::{disable_mouse_input, enable_mouse_input};
+use bararaq::inputs::{event, read, Interaction};
 
 use std::io::Write;
 

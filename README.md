@@ -1,18 +1,18 @@
 <h1 align="center">
-    ragout
+    bararaq
 </h1> 
 
-[<img alt="github" src="https://img.shields.io/badge/github-uraneko.ragout-A5915F?style=for-the-badge&logo=github&labelColor=3a3a3a" height="25">](https://github.com/uraneko/ragout) 
-[<img alt="crates.io" src="https://img.shields.io/crates/v/ragout.svg?style=for-the-badge&color=E40046&logo=rust&labelColor=3a3a3a" height="25">](https://crates.io/crates/ragout) 
-[<img alt="docs.rs" src="https://img.shields.io/badge/docs.rs-ragout-495c9f?style=for-the-badge&logo=docsdotrs&labelColor=3a3a3a" height="25">](https://docs.rs/ragout) 
-[<img alt="build status" src="https://img.shields.io/github/actions/workflow/status/uraneko/ragout/rust.yml?branch=main&style=for-the-badge&labelColor=3a3a3a" height="25">](https://github.com/uraneko/ragout/actions?query=branch%3Amain)
-[<img alt="license" src="https://img.shields.io/github/license/uraneko/ragout?style=for-the-badge&labelColor=3a3a3a&color=ECD53F" height="25">](https://github.com/uraneko/ragout/blob/main/LICENSE)
+[<img alt="github" src="https://img.shields.io/badge/github-uraneko.bararaq-A5915F?style=for-the-badge&logo=github&labelColor=3a3a3a" height="25">](https://github.com/uraneko/bararaq) 
+[<img alt="crates.io" src="https://img.shields.io/crates/v/bararaq.svg?style=for-the-badge&color=E40046&logo=rust&labelColor=3a3a3a" height="25">](https://crates.io/crates/bararaq) 
+[<img alt="docs.rs" src="https://img.shields.io/badge/docs.rs-bararaq-495c9f?style=for-the-badge&logo=docsdotrs&labelColor=3a3a3a" height="25">](https://docs.rs/bararaq) 
+[<img alt="build status" src="https://img.shields.io/github/actions/workflow/status/uraneko/bararaq/rust.yml?branch=main&style=for-the-badge&labelColor=3a3a3a" height="25">](https://github.com/uraneko/bararaq/actions?query=branch%3Amain)
+[<img alt="license" src="https://img.shields.io/github/license/uraneko/bararaq?style=for-the-badge&labelColor=3a3a3a&color=ECD53F" height="25">](https://github.com/uraneko/bararaq/blob/main/LICENSE)
 
 <h3>
     A Terminal User Interface (TUI) Library
 </h3>
  
-ragout is a TUI library written in rust. Implementation wise, this crate sits between crossterm and ratatui. Check features to know what this can be used for. Check examples to know how to use. Check direction to know where the crate is heading.
+bararaq is a TUI library written in rust. Implementation wise, this crate sits between crossterm and ratatui. Check features to know what this can be used for. Check examples to know how to use. Check direction to know where the crate is heading.
 
 ## Support 
 I'm developing on Arch Linux x86_64 Hyprland. That is to say, there should be no issues on said systems. Linux x86_64 systems should, in general, work.
@@ -65,7 +65,7 @@ If the CI builds are passing then, the lib at least builds on Windows amd64 and 
 
 ```bash
 # As this is a library crate, simply use
-cargo add ragout 
+cargo add bararaq 
 ```
 
 ## Examples
